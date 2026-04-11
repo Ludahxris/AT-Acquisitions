@@ -649,7 +649,7 @@ const STEP_TITLES = ['Property info','Price & rent','Expenses','Financing','Revi
 
 // ── SUPABASE CONFIG ───────────────────────────────────
 const SB_URL = 'https://ddpzeuuuuuhvjlxwofyv.supabase.co';
-const SB_KEY = 'sb_publishable_dKWmUcWHCLTeEfpVU28eEw_JTq9Ln40';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkcHpldXV1dXVodmpseHdvZnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MzMzNzYsImV4cCI6MjA5MTQwOTM3Nn0.lMajENTzOoBF2NKSRT0dB78muyfhZnGxNcbRVmQoPfM';
 
 async function sbGet(table, id) {
   const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}&select=*`, {
