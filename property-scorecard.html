@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AT Acquisitions — Property Scorecard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c26;
+    --card: #1e2333;
+    --border: #2a3040;
+    --accent: #e8b84b;
+    --accent2: #4b8fe8;
+    --danger: #e84b4b;
+    --success: #4be87a;
+    --warn: #e87a4b;
+    --text: #e8eaf2;
+    --muted: #6b7285;
+    --label: #9ba3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .header-left p {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    margin-top: 3px;
+  }
+  .prop-counter {
+    background: var(--accent);
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    min-width: 52px;
+    text-align: center;
+  }
+
+  /* ── Tab Nav ── */
+  .tab-nav {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-right: 6px;
+    vertical-align: middle;
+    transition: background 0.2s;
+  }
+  .tab-btn.active .dot { background: var(--accent); }
+  .tab-btn.scored .dot { background: var(--success); }
+
+  /* ── Main Content ── */
+  .content { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+  /* ── Section Card ── */
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    font-size: 16px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    flex: 1;
+  }
+  .section-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Field Types ── */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--label);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .field input, .field textarea, .field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent);
+  }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field select option { background: var(--card); }
+
+  /* ── Row layout for 2 fields ── */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* ── Toggle Buttons ── */
+  .toggle-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toggle-btn {
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+  .toggle-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+  .toggle-btn.red.selected { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .toggle-btn.green.selected { background: var(--success); border-color: var(--success); color: #000; }
+  .toggle-btn.warn.selected { background: var(--warn); border-color: var(--warn); color: #000; }
+
+  /* ── Checklist ── */
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .check-item:hover { border-color: var(--danger); }
+  .check-item.flagged { border-color: var(--danger); background: rgba(232,75,75,0.08); }
+  .check-box {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+  .check-item.flagged .check-box {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+  }
+  .check-label {
+    font-size: 13px;
+    color: var(--label);
+    flex: 1;
+  }
+  .check-item.flagged .check-label { color: var(--danger); }
+
+  /* ── Score Display ── */
+  .score-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .score-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .score-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    line-height: 1;
+  }
+  .score-grade {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    padding: 4px 14px;
+    border-radius: 6px;
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease, background 0.3s;
+  }
+  .red-flags-count {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+  .rf-badge {
+    background: var(--danger);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* ── 70% Rule Quick Calc ── */
+  .calc-result {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .calc-result .calc-line { display: flex; justify-content: space-between; padding: 3px 0; }
+  .calc-result .calc-answer {
+    font-size: 16px;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    margin-top: 6px;
+    padding-top: 8px;
+    font-weight: 500;
+  }
+  .calc-result .go { color: var(--success); }
+  .calc-result .nogo { color: var(--danger); }
+
+  /* ── Summary List ── */
+  .summary-list { display: flex; flex-direction: column; gap: 10px; }
+  .summary-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .summary-item:hover { border-color: var(--accent2); }
+  .summary-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--muted);
+    width: 28px;
+    text-align: center;
+  }
+  .summary-info { flex: 1; }
+  .summary-addr { font-size: 13px; font-weight: 500; color: var(--text); }
+  .summary-meta { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 2px; }
+  .summary-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    padding: 2px 10px;
+    border-radius: 6px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #f0c85a; }
+  .btn-ghost { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Bottom Nav ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+  }
+  .bottom-bar .btn { flex: 1; text-align: center; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+  /* ── Notes highlight ── */
+  .highlight-note {
+    background: rgba(232,184,75,0.08);
+    border: 1px solid rgba(232,184,75,0.25);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    line-height: 1.6;
+  }
+
+  /* ── Entity badge ── */
+  .entity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(75,143,232,0.12);
+    border: 1px solid rgba(75,143,232,0.3);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+  }
+
+  .save-toast {
+    position: fixed;
+    top: 70px;
+    right: 14px;
+    background: var(--success);
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 200;
+  }
+  .save-toast.show { opacity: 1; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .content { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="save-toast" id="saveToast">✓ SAVED</div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>AT Acquisitions</h1>
+    <p>DAYTON OH · APRIL 2026 · ALPHA OHIO LLC</p>
+  </div>
+  <div class="prop-counter" id="propCounter">1/1</div>
+</div>
+
+<div class="tab-nav" id="tabNav"></div>
+
+<div class="content" id="mainContent"></div>
+
+<div class="bottom-bar">
+  <button class="btn btn-ghost" onclick="addProperty()">+ NEW PROPERTY</button>
+  <button class="btn btn-primary" onclick="showSummary()">SUMMARY</button>
+</div>
+
+<script>
+// ── State ──
+let properties = [];
+let currentProp = 0;
+let view = 'form'; // 'form' | 'summary'
+
+const REHAB_SCOPES = ['Cosmetic', 'Light', 'Medium', 'Heavy', 'Full Gut'];
+const NBHD_GRADES = ['A', 'B', 'C+', 'C', 'C-', 'D'];
+const STRUCTURE_OPTIONS = ['Single Family', 'Duplex', 'Triplex', 'Fourplex'];
+const OCCUPIED_OPTIONS = ['Vacant', 'Partially Occupied', 'Fully Occupied'];
+const TENANT_OPTIONS = ['Unknown', 'Market Rate', 'Section 8', 'Month-to-Month'];
+
+const RED_FLAGS = [
+  'Knob-and-tube or aluminum wiring',
+  'Cast iron drain lines',
+  'Roof age 15+ years or visible damage',
+  'Evidence of mold / water intrusion',
+  'Missing HVAC (one or more units)',
+  'Horizontal foundation cracks',
+  'Sagging roof line or structural sag',
+  'Asbestos or lead paint likely (pre-1978)',
+  'Active pest infestation signs',
+  'Major electrical panel issues (fuse box)',
+];
+
+function newProperty() {
+  return {
+    id: Date.now(),
+    address: '',
+    zip: '',
+    askingPrice: '',
+    dom: '',
+    structure: '',
+    occupied: '',
+    tenantType: '',
+    arv: '',
+    rehab: '',
+    rehabScope: '',
+    nbhdGrade: '',
+    notes: '',
+    realtorNotes: '',
+    redFlags: [],
+    secondLook: false,
+    verdict: '',
+  };
+}
+
+function addProperty() {
+  properties.push(newProperty());
+  currentProp = properties.length - 1;
+  view = 'form';
+  render();
+}
+
+function switchTo(idx) {
+  currentProp = idx;
+  view = 'form';
+  render();
+}
+
+function showSummary() {
+  view = 'summary';
+  render();
+}
+
+// ── Scoring ──
+function scoreProperty(p) {
+  let score = 100;
+  const flags = p.redFlags.length;
+
+  // Red flags: -10 each
+  score -= flags * 10;
+
+  // Neighborhood
+  const nbhdMap = { 'A': 0, 'B': -2, 'C+': -5, 'C': -10, 'C-': -18, 'D': -30 };
+  score += (nbhdMap[p.nbhdGrade] || -10);
+
+  // Rehab scope
+  const rehabMap = { 'Cosmetic': 0, 'Light': -5, 'Medium': -10, 'Heavy': -18, 'Full Gut': -25 };
+  score += (rehabMap[p.rehabScope] || -10);
+
+  // 70% rule check
+  const arv = parseFloat(p.arv) || 0;
+  const rehab = parseFloat(p.rehab) || 0;
+  const ask = parseFloat(p.askingPrice) || 0;
+  if (arv > 0 && rehab > 0 && ask > 0) {
+    const maxOffer = arv * 0.70 - rehab;
+    if (ask > maxOffer * 1.15) score -= 15;
+    else if (ask > maxOffer) score -= 8;
+    else score += 5;
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  return score;
+}
+
+function gradeColor(score) {
+  if (score >= 75) return { color: '#4be87a', grade: 'A', label: 'STRONG LOOK' };
+  if (score >= 60) return { color: '#e8b84b', grade: 'B', label: 'WORTH OFFER' };
+  if (score >= 45) return { color: '#e87a4b', grade: 'C', label: 'PROCEED W/ CAUTION' };
+  return { color: '#e84b4b', grade: 'D', label: 'PASS' };
+}
+
+// ── 70% Rule Calc ──
+function calc70(p) {
+  const arv = parseFloat(p.arv) || 0;
+  const rehab = parseFloat(p.rehab) || 0;
+  const ask = parseFloat(p.askingPrice) || 0;
+  if (!arv || !rehab) return null;
+  const maxOffer = arv * 0.70 - rehab;
+  return { arv, rehab, ask, maxOffer };
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString();
+}
+
+// ── Render ──
+function render() {
+  renderTabs();
+  if (view === 'summary') {
+    renderSummary();
+  } else {
+    renderForm();
+  }
+  document.getElementById('propCounter').textContent =
+    view === 'summary' ? `${properties.length} PROPS` : `${currentProp + 1}/${properties.length}`;
+}
+
+function renderTabs() {
+  const nav = document.getElementById('tabNav');
+  let html = '';
+  properties.forEach((p, i) => {
+    const scored = p.rehabScope && p.nbhdGrade;
+    const active = (view === 'form' && i === currentProp);
+    const label = p.address ? p.address.split(',')[0].trim().toUpperCase() : `PROP ${i + 1}`;
+    html += `<button class="tab-btn ${active ? 'active' : ''} ${scored ? 'scored' : ''}" onclick="switchTo(${i})">
+      <span class="dot"></span>${label}
+    </button>`;
+  });
+  html += `<button class="tab-btn ${view === 'summary' ? 'active' : ''}" onclick="showSummary()">
+    <span class="dot" style="background:#4b8fe8"></span>SUMMARY
+  </button>`;
+  nav.innerHTML = html;
+}
+
+function renderForm() {
+  const p = properties[currentProp];
+  const score = scoreProperty(p);
+  const { color, grade, label } = gradeColor(score);
+  const c70 = calc70(p);
+
+  let html = '';
+
+  // Entity badge
+  html += `<div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+    <span class="entity-badge">⚖️ ALPHA OHIO LLC · EIN 38-4389929</span>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;">
+      <input type="checkbox" ${p.secondLook ? 'checked' : ''} onchange="update('secondLook', this.checked)" style="accent-color:var(--accent);width:14px;height:14px;">
+      2ND LOOK MON
+    </label>
+  </div>`;
+
+  // Score bar
+  html += `<div class="score-bar">
+    <div class="score-row">
+      <div>
+        <div class="score-label">DEAL SCORE</div>
+        <div class="score-num" style="color:${color}">${score}</div>
+      </div>
+      <div>
+        <div class="score-grade" style="background:${color}22;color:${color};border:1px solid ${color}44">${grade} — ${label}</div>
+      </div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width:${score}%;background:${color}"></div>
+    </div>
+    ${p.redFlags.length > 0 ? `<div class="red-flags-count"><span class="rf-badge">⚠️ ${p.redFlags.length}</span> RED FLAG${p.redFlags.length > 1 ? 'S' : ''} FLAGGED</div>` : ''}
+  </div>`;
+
+  // ── Section 1: Property Info ──
+  html += section('🏠', 'PROPERTY INFO', `
+    <div class="field">
+      <label>Street Address</label>
+      <input type="text" placeholder="123 Main St, Dayton OH" value="${esc(p.address)}" oninput="update('address', this.value)">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Zip Code</label>
+        <input type="text" placeholder="45406" value="${esc(p.zip)}" oninput="update('zip', this.value)">
+      </div>
+      <div class="field">
+        <label>Days on Market</label>
+        <input type="number" placeholder="0" value="${esc(p.dom)}" oninput="update('dom', this.value)">
+      </div>
+    </div>
+    <div class="field">
+      <label>Structure Type</label>
+      <div class="toggle-group">
+        ${STRUCTURE_OPTIONS.map(o => `<button class="toggle-btn ${p.structure===o?'selected':''}" onclick="update('structure','${o}')">${o}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>Occupancy Status</label>
+      <div class="toggle-group">
+        ${OCCUPIED_OPTIONS.map(o => `<button class="toggle-btn ${p.occupied===o?'selected':''}" onclick="update('occupied','${o}')">${o}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>Tenant Type</label>
+      <div class="toggle-group">
+        ${TENANT_OPTIONS.map(o => `<button class="toggle-btn ${p.tenantType===o?'selected':''}" onclick="update('tenantType','${o}')">${o}</button>`).join('')}
+      </div>
+    </div>
+  `);
+
+  // ── Section 2: Numbers ──
+  html += section('💰', 'NUMBERS', `
+    <div class="field-row">
+      <div class="field">
+        <label>Asking Price ($)</label>
+        <input type="number" placeholder="75000" value="${esc(p.askingPrice)}" oninput="update('askingPrice', this.value)">
+      </div>
+      <div class="field">
+        <label>Est. ARV ($)</label>
+        <input type="number" placeholder="120000" value="${esc(p.arv)}" oninput="update('arv', this.value)">
+      </div>
+    </div>
+    <div class="field">
+      <label>Est. Rehab Cost ($)</label>
+      <input type="number" placeholder="35000" value="${esc(p.rehab)}" oninput="update('rehab', this.value)">
+    </div>
+    ${c70 ? `<div class="calc-result">
+      <div class="calc-line"><span>ARV × 70%</span><span>${fmt(c70.arv * 0.70)}</span></div>
+      <div class="calc-line"><span>− Rehab</span><span>− ${fmt(c70.rehab)}</span></div>
+      <div class="calc-line calc-answer">
+        <span>MAX OFFER (70% Rule)</span>
+        <span class="${c70.ask && c70.ask <= c70.maxOffer ? 'go' : 'nogo'}">${fmt(c70.maxOffer)}</span>
+      </div>
+      ${c70.ask ? `<div class="calc-line" style="font-size:11px;margin-top:4px;">
+        <span>Asking vs Max Offer</span>
+        <span class="${c70.ask <= c70.maxOffer ? 'go' : 'nogo'}">${c70.ask <= c70.maxOffer ? '✓ ASKING UNDER MAX' : '✗ ASKING $' + Math.round(c70.ask - c70.maxOffer).toLocaleString() + ' OVER'}</span>
+      </div>` : ''}
+    </div>` : `<div class="highlight-note">Enter ARV + Rehab to see 70% Rule calculation</div>`}
+  `);
+
+  // ── Section 3: Condition ──
+  html += section('🔧', 'CONDITION ASSESSMENT', `
+    <div class="field">
+      <label>Neighborhood Grade</label>
+      <div class="toggle-group">
+        ${NBHD_GRADES.map(o => `<button class="toggle-btn ${p.nbhdGrade===o?'selected':''}" onclick="update('nbhdGrade','${o}')">${o}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>Rehab Scope</label>
+      <div class="toggle-group">
+        ${REHAB_SCOPES.map(o => `<button class="toggle-btn ${p.rehabScope===o?'selected':''}" onclick="update('rehabScope','${o}')">${o}</button>`).join('')}
+      </div>
+    </div>
+  `);
+
+  // ── Section 4: Red Flags ──
+  html += section('⚠️', 'RED FLAGS — TAP TO FLAG', `
+    <div class="checklist">
+      ${RED_FLAGS.map((f, i) => {
+        const flagged = p.redFlags.includes(i);
+        return `<div class="check-item ${flagged ? 'flagged' : ''}" onclick="toggleFlag(${i})">
+          <div class="check-box">${flagged ? '✕' : ''}</div>
+          <div class="check-label">${f}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `);
+
+  // ── Section 5: Notes ──
+  html += section('📝', 'NOTES', `
+    <div class="field">
+      <label>Realtor Notes / Seller Info</label>
+      <textarea placeholder="e.g. corporate seller, motivated, prior offer fell through..." oninput="update('realtorNotes', this.value)">${esc(p.realtorNotes)}</textarea>
+    </div>
+    <div class="field">
+      <label>Walkthrough Observations</label>
+      <textarea placeholder="What did you see? Roof, basement, unit layouts, condition..." oninput="update('notes', this.value)">${esc(p.notes)}</textarea>
+    </div>
+    <div class="field">
+      <label>Gut Verdict</label>
+      <div class="toggle-group">
+        ${['STRONG YES','MAYBE','PASS'].map(o => {
+          const cls = o === 'STRONG YES' ? 'green' : o === 'PASS' ? 'red' : 'warn';
+          return `<button class="toggle-btn ${cls} ${p.verdict===o?'selected':''}" onclick="update('verdict','${o}')">${o}</button>`;
+        }).join('')}
+      </div>
+    </div>
+  `);
+
+  // Delete
+  html += `<div class="btn-row" style="margin-top:4px;margin-bottom:20px">
+    <button class="btn btn-danger" onclick="deleteProperty()">DELETE THIS PROPERTY</button>
+  </div>`;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function section(icon, title, body) {
+  return `<div class="section-card">
+    <div class="section-header">
+      <div class="section-icon">${icon}</div>
+      <div class="section-title">${title}</div>
+    </div>
+    <div class="section-body">${body}</div>
+  </div>`;
+}
+
+function renderSummary() {
+  const sorted = [...properties].map((p, i) => ({ p, i, score: scoreProperty(p) }))
+    .sort((a, b) => b.score - a.score);
+
+  const secondLook = properties.filter(p => p.secondLook);
+
+  let html = '';
+
+  // Monday 2nd looks
+  if (secondLook.length > 0) {
+    html += `<div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📅</div>
+        <div class="section-title">MONDAY 2ND LOOKS (${secondLook.length})</div>
+      </div>
+      <div class="section-body">
+        ${secondLook.map(p => {
+          const score = scoreProperty(p);
+          const { color, grade } = gradeColor(score);
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:13px;font-weight:500">${p.address || 'No address'}</div>
+              <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${p.rehabScope || '—'} · ${p.redFlags.length} flags</div>
+            </div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${color}">${score}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Ranked list
+  html += `<div class="section-card">
+    <div class="section-header">
+      <div class="section-icon">🏆</div>
+      <div class="section-title">ALL PROPERTIES RANKED</div>
+    </div>
+    <div class="section-body">
+      <div class="summary-list">
+        ${sorted.map(({ p, i, score }) => {
+          const { color, grade, label } = gradeColor(score);
+          const c70 = calc70(p);
+          return `<div class="summary-item" onclick="switchTo(${i})">
+            <div class="summary-rank" style="color:var(--muted)">#${sorted.indexOf(sorted.find(x=>x.i===i))+1}</div>
+            <div class="summary-info">
+              <div class="summary-addr">${p.address || `Property ${i+1}`}</div>
+              <div class="summary-meta">
+                ${p.zip ? `ZIP ${p.zip} · ` : ''}${p.structure || '—'} · ${p.nbhdGrade ? `Grade ${p.nbhdGrade}` : 'No grade'} · ${p.redFlags.length} flags
+                ${c70 ? ` · Max ${fmt(c70.maxOffer)}` : ''}
+              </div>
+              <div style="margin-top:4px;font-size:11px;font-family:'DM Mono',monospace;color:${color}">${label}${p.secondLook ? ' · ⭐ 2ND LOOK' : ''}${p.verdict ? ` · ${p.verdict}` : ''}</div>
+            </div>
+            <div class="summary-score" style="background:${color}22;color:${color};border:1px solid ${color}33">${score}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  // Stats
+  const allScores = properties.map(p => scoreProperty(p));
+  const avg = allScores.length ? Math.round(allScores.reduce((a,b)=>a+b,0)/allScores.length) : 0;
+  const topDeal = sorted[0];
+
+  html += `<div class="section-card">
+    <div class="section-header">
+      <div class="section-icon">📊</div>
+      <div class="section-title">TRIP STATS</div>
+    </div>
+    <div class="section-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${statBox('Properties Walked', properties.length)}
+        ${statBox('Avg Score', avg)}
+        ${statBox('2nd Looks', secondLook.length)}
+        ${statBox('Top Score', topDeal ? topDeal.score : '—')}
+        ${statBox('Strong Yes', properties.filter(p=>p.verdict==='STRONG YES').length)}
+        ${statBox('Total Flags', properties.reduce((a,p)=>a+p.redFlags.length,0))}
+      </div>
+    </div>
+  </div>`;
+
+  html += `<div style="margin-bottom:20px;margin-top:4px">
+    <button class="btn btn-danger" onclick="clearData()">CLEAR ALL DATA — NEW TRIP</button>
+  </div>`;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function statBox(label, val) {
+  return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+    <div style="font-size:28px;font-family:'Bebas Neue',sans-serif;color:var(--accent)">${val}</div>
+    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:1px;margin-top:2px">${label}</div>
+  </div>`;
+}
+
+// ── Mutations ──
+function update(field, value) {
+  properties[currentProp][field] = value;
+  // Re-render score/calc only
+  render();
+}
+
+function toggleFlag(idx) {
+  const p = properties[currentProp];
+  const i = p.redFlags.indexOf(idx);
+  if (i > -1) p.redFlags.splice(i, 1);
+  else p.redFlags.push(idx);
+  render();
+}
+
+function deleteProperty() {
+  if (properties.length <= 1) { alert("Can't delete the only property."); return; }
+  if (!confirm('Delete this property entry?')) return;
+  properties.splice(currentProp, 1);
+  currentProp = Math.max(0, currentProp - 1);
+  render();
+}
+
+function esc(v) {
+  if (!v) return '';
+  return String(v).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+let toastTimer;
+function save() {
+  try {
+    localStorage.setItem('at_scorecard', JSON.stringify({ properties, currentProp }));
+    const toast = document.getElementById('saveToast');
+    if (toast) {
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1200);
+    }
+  } catch(e) {}
+}
+
+function clearData() {
+  if (!confirm('Clear ALL property data? This cannot be undone.')) return;
+  localStorage.removeItem('at_scorecard');
+  properties = [newProperty()];
+  currentProp = 0;
+  view = 'form';
+  render();
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem('at_scorecard');
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.properties && data.properties.length > 0) {
+        properties = data.properties;
+        currentProp = data.currentProp || 0;
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+// Patch update and toggleFlag to auto-save
+const _origUpdate = update;
+function update(field, value) {
+  properties[currentProp][field] = value;
+  save();
+  render();
+}
+
+function toggleFlag(idx) {
+  const p = properties[currentProp];
+  const i = p.redFlags.indexOf(idx);
+  if (i > -1) p.redFlags.splice(i, 1);
+  else p.redFlags.push(idx);
+  save();
+  render();
+}
+
+function deleteProperty() {
+  if (properties.length <= 1) { alert("Can't delete the only property."); return; }
+  if (!confirm('Delete this property entry?')) return;
+  properties.splice(currentProp, 1);
+  currentProp = Math.max(0, currentProp - 1);
+  save();
+  render();
+}
+
+function addProperty() {
+  properties.push(newProperty());
+  currentProp = properties.length - 1;
+  view = 'form';
+  save();
+  render();
+}
+
+// ── Init ──
+if (!load()) {
+  properties.push(newProperty());
+}
+render();
+</script>
+</body>
+</html>
